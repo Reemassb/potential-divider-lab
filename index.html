@@ -1,0 +1,453 @@
+<title>Sensor Circuit Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=Chakra+Petch:wght@500;600&display=swap">
+<style>
+/* Layout: instrument bench — circuit board on the left, control rack on the right, data logger strip underneath. */
+:root{
+  --bg:#eef2f5; --panel:#ffffff; --ink:#13233d; --muted:#5a6b80; --line:#cfd8e2;
+  --navy:#16325c; --teal:#0e8a83; --teal-soft:#d7f0ee; --amber:#e8a020; --amber-soft:#fbedd2;
+  --wire:#2b3d57; --screen:#0f1e33; --screen-ink:#7ff0e0; --danger:#c2453a;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow","Segoe UI",Arial,sans-serif;
+  --f-data:"Chakra Petch","Consolas",monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1524; --panel:#132036; --ink:#e6edf6; --muted:#9db0c6; --line:#263a57;
+  --navy:#8fb4ea; --teal:#36c2b8; --teal-soft:#123a3c; --amber:#f2b441; --amber-soft:#3a2d12;
+  --wire:#b9c8dc; --screen:#060d18; --screen-ink:#7ff0e0; --danger:#ef7a6e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1524; --panel:#132036; --ink:#e6edf6; --muted:#9db0c6; --line:#263a57;
+  --navy:#8fb4ea; --teal:#36c2b8; --teal-soft:#123a3c; --amber:#f2b441; --amber-soft:#3a2d12;
+  --wire:#b9c8dc; --screen:#060d18; --screen-ink:#7ff0e0; --danger:#ef7a6e; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-display);font-size:2.1rem;line-height:1;margin:0;color:var(--navy);letter-spacing:.01em}
+.eyebrow{font-family:var(--f-data);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+.sub{color:var(--muted);margin:4px 0 0;max-width:60ch}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{font:600 .9rem var(--f-body);border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--navy);color:var(--panel);border-color:var(--navy)}
+:root[data-theme="dark"] .tabs button[aria-pressed="true"]{color:#0c1524}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tabs button[aria-pressed="true"]{color:#0c1524}}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.brief{background:var(--amber-soft);border-left:4px solid var(--amber);padding:10px 14px;border-radius:4px;font-size:.95rem}
+.brief b{font-family:var(--f-display);font-size:1.05rem;letter-spacing:.02em;margin-right:6px}
+.bench{display:grid;align-items:start;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.bench{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.panel h2{font-family:var(--f-display);font-size:1.15rem;letter-spacing:.04em;text-transform:uppercase;margin:0 0 10px;color:var(--navy)}
+svg#circuit{width:100%;height:auto;display:block}
+.meters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+@media (max-width:520px){.meters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.meter{background:var(--screen);border-radius:6px;padding:8px 10px;color:var(--screen-ink)}
+.meter span{display:block;font-family:var(--f-data);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:#9fb6cf}
+.meter output{font-family:var(--f-data);font-size:1.25rem;font-variant-numeric:tabular-nums}
+.status{display:flex;align-items:center;gap:10px;margin-top:10px;font-weight:600}
+.pill{font-family:var(--f-data);font-size:.8rem;letter-spacing:.08em;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.pill.on{background:var(--amber);border-color:var(--amber);color:#1b1404}
+.rack{display:flex;flex-direction:column;gap:14px}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 12px 12px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-family:var(--f-data);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);padding:0 4px}
+.row{display:grid;grid-template-columns:7.5rem minmax(0,1fr) auto;align-items:center;gap:10px}
+@media (max-width:420px){.row{grid-template-columns:minmax(0,1fr) auto}.row input[type=range]{grid-column:1/-1;order:3}}
+label{font-size:.9rem;font-weight:500}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.val{font-family:var(--f-data);font-variant-numeric:tabular-nums;font-size:.95rem;min-width:6.5rem;text-align:right}
+select,input[type=number]{font:500 .9rem var(--f-body);padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);min-width:0}
+.ticks{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:-6px;padding-left:8.1rem;gap:4px}
+@media (max-width:420px){.ticks{padding-left:0}}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:600 .9rem var(--f-body);padding:8px 14px;border-radius:6px;border:1px solid var(--navy);background:transparent;color:var(--navy);cursor:pointer}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn:hover{filter:brightness(1.08)}
+.check{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.note{font-size:.82rem;color:var(--muted)}
+.logger{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:16px}
+@media (max-width:860px){.logger{grid-template-columns:minmax(0,1fr)}}
+.tablebox{overflow:auto;max-height:340px;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:.85rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);font-family:var(--f-data);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td:first-child,th:first-child{text-align:left}
+.empty{padding:18px;color:var(--muted);text-align:center}
+canvas{width:100%;height:320px;display:block}
+.graphctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px;font-size:.9rem}
+textarea#copybox{width:100%;height:90px;font-family:var(--f-data);font-size:.75rem}
+.flow{stroke-dasharray:6 10;animation:flow var(--spd,2s) linear infinite}
+@keyframes flow{to{stroke-dashoffset:-32}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+footer{font-size:.8rem;color:var(--muted)}
+.report{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.report{grid-template-columns:minmax(0,1fr)}}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.wide{grid-column:1/-1}
+.field input,.field textarea,.field select{font:500 .95rem var(--f-body);padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);min-width:0;width:100%}
+.field textarea{min-height:64px;resize:vertical}
+.cardgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;grid-column:1/-1}
+@media (max-width:760px){.cardgrid{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">PhysicsFlow · Circuits · Potential dividers and sensors</div>
+      <h1>Sensor Circuit Lab</h1>
+      <p class="sub">Build a potential divider, change the light or the temperature, and find out when the control unit switches the device on.</p>
+    </div>
+    <div class="tabs" role="group" aria-label="Scenario">
+      <button id="tab-explore" data-mode="explore" aria-pressed="true">Explore</button>
+      <button id="tab-street" data-mode="street" aria-pressed="false">Street light</button>
+      <button id="tab-fan" data-mode="fan" aria-pressed="false">Rooftop fan</button>
+      <button id="tab-free" data-mode="free" aria-pressed="false">Open lab</button>
+    </div>
+  </header>
+
+  <div class="brief" id="brief"></div>
+
+  <div class="bench">
+    <section class="panel" aria-label="Circuit">
+      <h2>Circuit</h2>
+      <svg id="circuit" viewBox="0 0 560 350" role="img" aria-label="Potential divider circuit diagram"></svg>
+      <div class="meters">
+        <div class="meter"><span>V<sub>out</sub> (voltmeter)</span><output id="m-vout">–</output></div>
+        <div class="meter"><span>Current (ammeter)</span><output id="m-i">–</output></div>
+        <div class="meter"><span>R top</span><output id="m-rt">–</output></div>
+        <div class="meter"><span>R bottom</span><output id="m-rb">–</output></div>
+      </div>
+      <div class="status" id="statusRow"><span id="devName">Control unit</span><span class="pill" id="devPill">OFF</span><span class="note" id="devNote"></span></div>
+    </section>
+
+    <section class="panel rack" aria-label="Controls">
+      <h2>Controls</h2>
+      <fieldset>
+        <legend>Supply</legend>
+        <div class="row"><label for="vin">V<sub>in</sub></label><input type="range" id="vin" min="1" max="12" step="0.5" value="6"><span class="val" id="vin-v"></span></div>
+      </fieldset>
+      <fieldset>
+        <legend>Components</legend>
+        <div class="row"><label for="topType">Top (R<sub>1</sub>)</label>
+          <select id="topType"><option value="fixed">Resistor</option><option value="ldr">LDR</option><option value="ntc">Thermistor (NTC)</option></select><span></span></div>
+        <div class="row" id="topValRow"><label for="topVal">R<sub>1</sub> value</label><input type="range" id="topVal" min="0" max="48" step="1"><span class="val" id="topVal-v"></span></div>
+        <div class="row"><label for="botType">Bottom (R<sub>2</sub>)</label>
+          <select id="botType"><option value="fixed">Resistor</option><option value="ldr">LDR</option><option value="ntc">Thermistor (NTC)</option></select><span></span></div>
+        <div class="row" id="botValRow"><label for="botVal">R<sub>2</sub> value</label><input type="range" id="botVal" min="0" max="48" step="1"><span class="val" id="botVal-v"></span></div>
+        <div class="btns"><button class="btn" id="swap">Swap top and bottom</button></div>
+        <p class="note">Resistor values snap to the E12 series used for real resistors (100 Ω to 1 MΩ). V<sub>out</sub> is measured across the bottom component.</p>
+      </fieldset>
+      <fieldset id="envSet">
+        <legend>Environment</legend>
+        <div class="row"><label for="lux">Light level</label><input type="range" id="lux" min="-1" max="5" step="0.01" value="2.48"><span class="val" id="lux-v"></span></div>
+        <div class="ticks"><span>moonlight</span><span>dusk</span><span>classroom</span><span>midday sun</span></div>
+        <div class="row"><label for="temp">Temperature</label><input type="range" id="temp" min="0" max="60" step="0.5" value="30"><span class="val" id="temp-v"></span></div>
+        <div class="ticks"><span>0 °C</span><span>20 °C</span><span>40 °C</span><span>60 °C</span></div>
+      </fieldset>
+      <fieldset id="cuSet">
+        <legend>Control unit</legend>
+        <div class="row"><label for="thr">Switches at</label><input type="range" id="thr" min="1" max="11" step="0.1" value="6"><span class="val" id="thr-v"></span></div>
+        <div class="row"><label for="device">Device</label><select id="device"><option value="lamp">Street lamp</option><option value="fan">Rooftop fan</option><option value="buzzer">Alarm buzzer</option></select><span></span></div>
+        <label class="check"><input type="checkbox" id="loadOn"> Real control unit (draws current)</label>
+        <div class="row" id="loadRow" hidden><label for="load">Input resistance</label><input type="range" id="load" min="0" max="48" step="1" value="36"><span class="val" id="load-v"></span></div>
+        <p class="note" id="powerNote"></p>
+      </fieldset>
+      <fieldset>
+        <legend>Meters</legend>
+        <label class="check"><input type="checkbox" id="noise" checked> Realistic meters (small random reading error)</label>
+      </fieldset>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="Data logger">
+    <h2>Data logger</h2>
+    <div class="btns" style="margin-bottom:12px">
+      <button class="btn primary" id="rec">Record reading</button>
+      <button class="btn" id="undo">Remove last</button>
+      <button class="btn" id="clear">Clear table</button>
+      <button class="btn" id="copy">Copy table for Excel</button>
+      <span class="note" id="copyMsg" role="status"></span>
+      <span class="note">Changing the scenario tab starts a new table.</span>
+    </div>
+    <textarea id="copybox" hidden aria-label="Table data to copy"></textarea>
+    <div class="logger">
+      <div class="tablebox"><table><thead><tr><th>#</th><th>Light / lux</th><th>T / °C</th><th>R₁ / Ω</th><th>R₂ / Ω</th><th>V<sub>in</sub> / V</th><th>V<sub>out</sub> / V</th><th>I / mA</th><th>Unit</th></tr></thead><tbody id="tbody"></tbody></table></div>
+      <div>
+        <div class="graphctl">
+          <label for="xvar">Plot V<sub>out</sub> against</label>
+          <select id="xvar"><option value="ratio">R₂ ÷ (R₁ + R₂)</option><option value="lux">Light level</option><option value="temp">Temperature</option><option value="r2">R₂</option><option value="r1">R₁</option></select>
+          <label class="check"><input type="checkbox" id="logx"> log scale on x</label>
+        </div>
+        <canvas id="graph" aria-label="Graph of recorded readings"></canvas>
+      </div>
+    </div>
+  </section>
+  <section class="panel" aria-label="Report">
+    <h2>My report</h2>
+    <p class="note" style="margin:-4px 0 12px">Fill in your details and Design Card, then download a PDF. Your data table, your graph and the circuit settings are added automatically.</p>
+    <div class="report">
+      <div class="field"><label for="rName">Name</label><input id="rName" type="text" autocomplete="name"></div>
+      <div class="field"><label for="rClass">Class</label><input id="rClass" type="text"></div>
+      <div class="field"><label for="rMission">Mission</label><select id="rMission"><option>Explore only</option><option>Mission 1 · Night Switch</option><option>Mission 2 · City Engineer</option><option>Mission 3 · Open Lab</option></select></div>
+      <div class="field wide"><label for="rQ">My question</label><input id="rQ" type="text"></div>
+      <div class="cardgrid">
+        <div class="field"><label for="rCirc">Circuit and component values</label><textarea id="rCirc"></textarea><button class="btn" id="fillCirc" type="button" style="align-self:flex-start">Fill in from my circuit</button></div>
+        <div class="field"><label for="rEvid">Key evidence (a number or graph feature that proves it works)</label><textarea id="rEvid"></textarea></div>
+        <div class="field"><label for="rWhy">Why it works (use V<sub>out</sub> = V<sub>in</sub> × R₂ ÷ (R₁ + R₂))</label><textarea id="rWhy"></textarea></div>
+        <div class="field"><label for="rLim">One limitation</label><textarea id="rLim"></textarea></div>
+      </div>
+    </div>
+    <div class="btns" style="margin-top:14px"><button class="btn primary" id="pdfBtn" type="button">Download PDF report</button><span class="note" id="pdfMsg" role="status"></span></div>
+  </section>
+  <footer>Sensor models: LDR R = 10 kΩ × (E / 10 lux)<sup>−0.7</sup>; NTC thermistor R = 10 kΩ at 25 °C, B = 3950 K. Real components vary, so treat these as one example of each.<br>© PhysicsFlow · Physics Resources and More. Licensed for single-teacher classroom use.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const E12=[1,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.6,6.8,8.2];
+const RV=[];for(let d=2;d<=5;d++)for(const m of E12)RV.push(Math.round(m*10**d));RV.push(1e6);
+const idxOf=v=>{let b=0;RV.forEach((r,i)=>{if(Math.abs(Math.log(r/v))<Math.abs(Math.log(RV[b]/v)))b=i});return b};
+const fmtR=r=>r>=1e6?(r/1e6).toFixed(2)+" MΩ":r>=1e3?(r/1e3).toFixed(r>=1e5?0:r>=1e4?1:2)+" kΩ":r.toFixed(0)+" Ω";
+const ldrR=lux=>1e4*Math.pow(lux/10,-0.7);
+const ntcR=T=>1e4*Math.exp(3950*(1/(T+273.15)-1/298.15));
+const fmtLux=l=>l>=1000?Math.round(l).toLocaleString("en-US"):l>=10?l.toFixed(0):l.toFixed(1);
+
+const BRIEF={
+  explore:"<b>Explore.</b> Two fixed resistors share the supply voltage. Change R₁, R₂ and V<sub>in</sub>, record at least five readings, and find the rule that connects V<sub>out</sub> to the resistances.",
+  street:"<b>Street light.</b> Street lights should switch on by themselves at dusk. The control unit turns the lamp on when V<sub>out</sub> reaches the switching voltage. Test the circuit below as it is first set up, then fix it.",
+  fan:"<b>Rooftop fan.</b> In a hot climate, a fan should cool a rooftop water tank once the air gets hot. The control unit turns the fan on when V<sub>out</sub> reaches the switching voltage. Does the starting circuit do the job?",
+  free:"<b>Open lab.</b> Any sensor, any position, any values. Use it to answer your own question, and record the evidence you need."
+};
+const PRESET={
+  explore:{vin:6,top:"fixed",tv:1000,bot:"fixed",bv:2200,x:"ratio",logx:false,device:"lamp"},
+  street:{vin:12,top:"ldr",tv:6800,bot:"fixed",bv:6800,x:"lux",logx:true,device:"lamp",lux:300},
+  fan:{vin:12,top:"fixed",tv:10000,bot:"ntc",bv:10000,x:"temp",logx:false,device:"fan",temp:30},
+  free:{vin:12,top:"fixed",tv:4700,bot:"ldr",bv:4700,x:"lux",logx:true,device:"buzzer"}
+};
+let mode="explore", rows=[];
+
+function setMode(m){
+  mode=m; const p=PRESET[m];
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===m));
+  $("brief").innerHTML=BRIEF[m];
+  $("vin").value=p.vin; $("topType").value=p.top; $("botType").value=p.bot;
+  $("topVal").value=idxOf(p.tv); $("botVal").value=idxOf(p.bv);
+  $("xvar").value=p.x; $("logx").checked=p.logx; $("device").value=p.device;
+  if(p.lux) $("lux").value=Math.log10(p.lux); if(p.temp) $("temp").value=p.temp;
+  $("thr").value=6; $("loadOn").checked=false;
+  rows=[]; renderTable(); update();
+}
+function compR(type,valIdx){
+  if(type==="ldr") return ldrR(Math.pow(10,+$("lux").value));
+  if(type==="ntc") return ntcR(+$("temp").value);
+  return RV[+valIdx];
+}
+let state={};
+function calc(){
+  const vin=+$("vin").value, lux=Math.pow(10,+$("lux").value), T=+$("temp").value;
+  const r1=compR($("topType").value,$("topVal").value), r2=compR($("botType").value,$("botVal").value);
+  const loadOn=$("loadOn").checked && mode!=="explore", rl=RV[+$("load").value];
+  const r2e=loadOn? r2*rl/(r2+rl) : r2;
+  const I=vin/(r1+r2e), vout=I*r2e;
+  return {vin,lux,T,r1,r2,I,vout,P:vin*I,thr:+$("thr").value,loadOn,rl};
+}
+const jitter=()=>$("noise").checked?(1+(Math.random()-0.5)*0.004):1;
+
+function update(){
+  const s=calc(); state=s;
+  const ex=mode==="explore";
+  $("envSet").hidden=ex; $("cuSet").hidden=ex;
+  $("topValRow").hidden=$("topType").value!=="fixed";
+  $("botValRow").hidden=$("botType").value!=="fixed";
+  $("loadRow").hidden=!$("loadOn").checked;
+  $("vin-v").textContent=s.vin.toFixed(1)+" V";
+  $("topVal-v").textContent=fmtR(RV[+$("topVal").value]);
+  $("botVal-v").textContent=fmtR(RV[+$("botVal").value]);
+  $("lux-v").textContent=fmtLux(s.lux)+" lux";
+  $("temp-v").textContent=s.T.toFixed(1)+" °C";
+  $("thr-v").textContent=s.thr.toFixed(1)+" V";
+  $("load-v").textContent=fmtR(s.rl);
+  const on=!ex && s.vout>=s.thr;
+  $("m-vout").textContent=(s.vout*jitter()).toFixed(2)+" V";
+  $("m-i").textContent=(s.I*1000*jitter()).toFixed(s.I*1000<1?3:2)+" mA";
+  $("m-rt").textContent=fmtR(s.r1); $("m-rb").textContent=fmtR(s.r2);
+  $("statusRow").hidden=ex;
+  const dn={lamp:"Street lamp",fan:"Rooftop fan",buzzer:"Alarm buzzer"}[$("device").value];
+  $("devName").textContent=dn; $("devPill").textContent=on?"ON":"OFF"; $("devPill").className="pill"+(on?" on":"");
+  $("devNote").textContent=on?"V_out is at or above the switching voltage":"V_out is below the switching voltage";
+  $("powerNote").textContent="Power taken by the divider: "+(s.P*1000).toFixed(2)+" mW";
+  drawCircuit(s,on,ex); drawGraph();
+}
+
+/* ---------- circuit drawing ---------- */
+function sym(type,cx,cy,label,val){
+  let g=`<rect x="${cx-12}" y="${cy-34}" width="24" height="68" fill="var(--panel)" stroke="var(--wire)" stroke-width="2.5"/>`;
+  if(type==="ldr"){
+    g+=`<circle cx="${cx}" cy="${cy}" r="44" fill="none" stroke="var(--wire)" stroke-width="2"/>`;
+    for(const dy of [-18,2]){g+=`<line x1="${cx-64}" y1="${cy+dy-20}" x2="${cx-30}" y2="${cy+dy}" stroke="var(--amber)" stroke-width="2.5"/><path d="M${cx-30} ${cy+dy} l-10 -1 l5 -8 z" fill="var(--amber)"/>`;}
+  }
+  if(type==="ntc"){
+    g+=`<line x1="${cx-24}" y1="${cy+30}" x2="${cx+24}" y2="${cy-30}" stroke="var(--wire)" stroke-width="2.5"/><line x1="${cx-38}" y1="${cy+30}" x2="${cx-24}" y2="${cy+30}" stroke="var(--wire)" stroke-width="2.5"/>`;
+  }
+  g+=`<text x="${cx+30}" y="${cy-6}" class="lbl">${label}</text><text x="${cx+30}" y="${cy+14}" class="lblv">${val}</text>`;
+  return g;
+}
+function drawCircuit(s,on,ex){
+  const spd=Math.max(0.4,Math.min(6,0.004/Math.max(s.I,1e-6)));
+  const names={fixed:"Resistor",ldr:"LDR",ntc:"Thermistor"};
+  const tT=$("topType").value,bT=$("botType").value;
+  const glow=on?"var(--amber)":"var(--line)";
+  let dev="";
+  const d=$("device").value;
+  if(!ex){
+    if(d==="lamp") dev=`<circle cx="470" cy="70" r="20" fill="${glow}" opacity="${on?1:.6}"/><line x1="456" y1="56" x2="484" y2="84" stroke="var(--wire)" stroke-width="2"/><line x1="484" y1="56" x2="456" y2="84" stroke="var(--wire)" stroke-width="2"/><circle cx="470" cy="70" r="20" fill="none" stroke="var(--wire)" stroke-width="2"/>`;
+    else if(d==="fan") dev=`<circle cx="470" cy="70" r="22" fill="none" stroke="var(--wire)" stroke-width="2"/><g class="${on?'spin':''}" style="transform-origin:470px 70px">${[0,120,240].map(a=>`<ellipse cx="470" cy="58" rx="6" ry="12" fill="${glow}" transform="rotate(${a} 470 70)"/>`).join("")}</g>`;
+    else dev=`<path d="M455 82 v-18 a15 15 0 0 1 30 0 v18 z" fill="${glow}" stroke="var(--wire)" stroke-width="2"/><line x1="470" y1="82" x2="470" y2="92" stroke="var(--wire)" stroke-width="2"/>`;
+    dev+=`<line x1="470" y1="${d==='lamp'?90:92}" x2="470" y2="150" stroke="var(--wire)" stroke-width="2"/>`;
+  }
+  const wire=`stroke="var(--wire)" stroke-width="2.5" fill="none"`;
+  const flow=`stroke="var(--teal)" stroke-width="2.5" fill="none" class="flow" style="--spd:${spd.toFixed(2)}s"`;
+  const loop="M70 165 V40 H300 V76 M300 144 V206 M300 274 V310 H70 V182";
+  let svg=`<style>.lbl{font:600 15px var(--f-body);fill:var(--ink)}.lblv{font:600 14px var(--f-data);fill:var(--teal)}.sm{font:500 12px var(--f-body);fill:var(--muted)}.spin{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){.spin{animation:none}}</style>`;
+  svg+=`<path d="${loop}" ${wire}/><path d="${loop}" ${flow}/>`;
+  // battery
+  svg+=`<line x1="48" y1="165" x2="92" y2="165" stroke="var(--wire)" stroke-width="2.5"/><line x1="60" y1="182" x2="80" y2="182" stroke="var(--wire)" stroke-width="6"/>`;
+  svg+=`<text x="100" y="170" class="lbl">V<tspan baseline-shift="sub" font-size="11">in</tspan></text><text x="100" y="190" class="lblv">${s.vin.toFixed(1)} V</text><text x="40" y="160" class="sm">+</text>`;
+  // ammeter
+  svg+=`<circle cx="185" cy="40" r="15" fill="var(--panel)" stroke="var(--wire)" stroke-width="2.5"/><text x="185" y="45" text-anchor="middle" class="lbl">A</text>`;
+  // components
+  svg+=sym(tT,300,110,names[tT]+" R₁",fmtR(s.r1));
+  svg+=sym(bT,300,240,names[bT]+" R₂",fmtR(s.r2));
+  // output node and voltmeter
+  svg+=`<circle cx="300" cy="175" r="4.5" fill="var(--wire)"/><circle cx="300" cy="310" r="4.5" fill="var(--wire)"/>`;
+  svg+=`<path d="M300 175 H210 V223 M210 257 V310" ${wire}/><circle cx="210" cy="240" r="17" fill="var(--panel)" stroke="var(--wire)" stroke-width="2.5"/><text x="210" y="245" text-anchor="middle" class="lbl">V</text>`;
+  svg+=`<text x="150" y="232" class="sm" text-anchor="end">V<tspan baseline-shift="sub" font-size="9">out</tspan></text><text x="150" y="250" class="lblv" text-anchor="end">${s.vout.toFixed(2)} V</text>`;
+  if(!ex){
+    svg+=`<path d="M300 175 H420 M300 310 H420" ${wire}/>`;
+    svg+=`<rect x="420" y="150" width="100" height="180" rx="8" fill="var(--teal-soft)" stroke="var(--teal)" stroke-width="2"/>`;
+    svg+=`<text x="470" y="200" text-anchor="middle" class="lbl">Control</text><text x="470" y="218" text-anchor="middle" class="lbl">unit</text>`;
+    svg+=`<text x="470" y="250" text-anchor="middle" class="sm">on at</text><text x="470" y="268" text-anchor="middle" class="lblv">≥ ${s.thr.toFixed(1)} V</text>`;
+    if(s.loadOn) svg+=`<text x="470" y="300" text-anchor="middle" class="sm">R_in ${fmtR(s.rl)}</text>`;
+    svg+=dev;
+  }
+  $("circuit").innerHTML=svg;
+}
+
+/* ---------- logger ---------- */
+function record(){
+  const s=calc(), j=jitter;
+  rows.push({lux:s.lux,T:s.T,r1:s.r1,r2:s.r2,vin:s.vin,vout:s.vout*j(),I:s.I*1000*j(),on:mode!=="explore"&&s.vout>=s.thr,
+    sens:($("topType").value!=="fixed"||$("botType").value!=="fixed")});
+  renderTable(); drawGraph();
+}
+function renderTable(){
+  const tb=$("tbody");
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="9" class="empty">No readings yet. Set up the circuit and press “Record reading”.</td></tr>`;return}
+  tb.innerHTML=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.sens?fmtLux(r.lux):"–"}</td><td>${r.sens?r.T.toFixed(1):"–"}</td><td>${Math.round(r.r1)}</td><td>${Math.round(r.r2)}</td><td>${r.vin.toFixed(1)}</td><td>${r.vout.toFixed(2)}</td><td>${r.I.toFixed(3)}</td><td>${mode==="explore"?"–":(r.on?"ON":"OFF")}</td></tr>`).join("");
+  tb.parentElement.parentElement.scrollTop=1e6;
+}
+function tsv(){return ["#\tLight / lux\tT / °C\tR1 / ohm\tR2 / ohm\tVin / V\tVout / V\tI / mA\tUnit"].concat(rows.map((r,i)=>[i+1,r.sens?fmtLux(r.lux).replace(/,/g,""):"",r.sens?r.T.toFixed(1):"",Math.round(r.r1),Math.round(r.r2),r.vin.toFixed(1),r.vout.toFixed(2),r.I.toFixed(3),r.on?"ON":"OFF"].join("\t"))).join("\n")}
+
+/* ---------- graph ---------- */
+function drawGraph(target,pal,w,h){
+  const c=target||$("graph"), dpr=target?2:(window.devicePixelRatio||1), W=w||c.clientWidth, H=h||c.clientHeight;
+  const css=k=>pal?pal[k]:getComputedStyle(document.documentElement).getPropertyValue(k).trim();
+  c.width=W*dpr; c.height=H*dpr; const g=c.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  if(pal){g.fillStyle="#ffffff";g.fillRect(0,0,W,H)}
+  const xv=$("xvar").value, logx=$("logx").checked;
+  const xs=rows.map(r=>({ratio:r.r2/(r.r1+r.r2),lux:r.lux,temp:r.T,r2:r.r2,r1:r.r1})[xv]);
+  const ys=rows.map(r=>r.vout);
+  const L=58,R=30,T=14,B=46, pw=W-L-R, ph=H-T-B;
+  g.font="12px "+(pal?"Arial":css("--f-body")); g.fillStyle=css("--muted"); g.strokeStyle=css("--line"); g.lineWidth=1;
+  const xlab={ratio:"R₂ ÷ (R₁ + R₂)",lux:"Light level / lux",temp:"Temperature / °C",r2:"R₂ / Ω",r1:"R₁ / Ω"}[xv];
+  let xmin,xmax;
+  const ok=xs.filter(x=>!logx||x>0);
+  if(ok.length){xmin=Math.min(...ok);xmax=Math.max(...ok)}else{xmin=0;xmax=1}
+  if(logx){xmin=Math.pow(10,Math.floor(Math.log10(xmin||0.1)));xmax=Math.pow(10,Math.ceil(Math.log10(xmax||1)));if(xmax<=xmin)xmax=xmin*10}
+  else{ if(xv==="ratio"){xmin=0;xmax=1} else {const pad=(xmax-xmin)*0.08||1; xmin=Math.max(0,xmin-pad); xmax=xmax+pad;} }
+  const ymax=Math.max(12,...ys,state.vin||0); const ystep=ymax>12?4:2; const ytop=Math.ceil(ymax/ystep)*ystep;
+  const X=x=>L+(logx?(Math.log10(x)-Math.log10(xmin))/(Math.log10(xmax)-Math.log10(xmin)):(x-xmin)/(xmax-xmin))*pw;
+  const Y=y=>T+ph-(y/ytop)*ph;
+  // grid
+  g.textAlign="right"; g.textBaseline="middle";
+  for(let y=0;y<=ytop;y+=ystep){g.beginPath();g.moveTo(L,Y(y));g.lineTo(L+pw,Y(y));g.stroke();g.fillText(y.toFixed(0),L-8,Y(y))}
+  g.textAlign="center"; g.textBaseline="top";
+  if(logx){for(let e=Math.log10(xmin);e<=Math.log10(xmax)+1e-9;e++){const x=Math.pow(10,e);g.beginPath();g.moveTo(X(x),T);g.lineTo(X(x),T+ph);g.stroke();g.fillText(x>=1000?x.toLocaleString("en-US"):String(+x.toPrecision(2)),X(x),T+ph+6)}}
+  else{const n=5;for(let i=0;i<=n;i++){const x=xmin+(xmax-xmin)*i/n;g.beginPath();g.moveTo(X(x),T);g.lineTo(X(x),T+ph);g.stroke();g.fillText(Math.abs(x)>=1000?Math.round(x).toLocaleString("en-US"):(+x.toPrecision(3)).toString(),X(x),T+ph+6)}}
+  g.fillStyle=css("--ink"); g.fillText(xlab,L+pw/2,H-18);
+  g.save(); g.translate(14,T+ph/2); g.rotate(-Math.PI/2); g.fillText("V_out / V",0,-6); g.restore();
+  // threshold
+  if(mode!=="explore"){g.strokeStyle=css("--amber");g.setLineDash([6,5]);g.lineWidth=2;g.beginPath();g.moveTo(L,Y(state.thr));g.lineTo(L+pw,Y(state.thr));g.stroke();g.setLineDash([]);
+    g.fillStyle=css("--amber");g.textAlign="right";g.textBaseline="bottom";g.fillText("switching voltage",L+pw-4,Y(state.thr)-3)}
+  if(!rows.length){g.fillStyle=css("--muted");g.textAlign="center";g.textBaseline="middle";g.fillText("Recorded readings appear here",L+pw/2,T+ph/2);return}
+  rows.forEach((r,i)=>{const x=xs[i]; if(logx&&x<=0)return; g.beginPath(); g.arc(X(x),Y(ys[i]),5,0,7); g.fillStyle=r.on?css("--amber"):css("--teal"); g.fill(); g.strokeStyle=css("--panel"); g.lineWidth=1.5; g.stroke();});
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.mode)));
+["vin","topType","topVal","botType","botVal","lux","temp","thr","device","loadOn","load","noise"].forEach(id=>$(id).addEventListener("input",update));
+["xvar","logx"].forEach(id=>$(id).addEventListener("input",()=>drawGraph()));
+$("swap").addEventListener("click",()=>{const t=$("topType").value,tv=$("topVal").value;$("topType").value=$("botType").value;$("topVal").value=$("botVal").value;$("botType").value=t;$("botVal").value=tv;update()});
+$("rec").addEventListener("click",record);
+$("undo").addEventListener("click",()=>{rows.pop();renderTable();drawGraph()});
+let clearArm=false;
+$("clear").addEventListener("click",()=>{if(!rows.length)return; if(!clearArm){clearArm=true;$("clear").textContent="Press again to clear";setTimeout(()=>{clearArm=false;$("clear").textContent="Clear table"},2500);return} clearArm=false;$("clear").textContent="Clear table";rows=[];renderTable();drawGraph()});
+$("copy").addEventListener("click",()=>{const t=tsv();const box=$("copybox");
+  const fb=()=>{box.hidden=false;box.value=t;box.focus();box.select();$("copyMsg").textContent="Select all and copy the text below."};
+  try{navigator.clipboard.writeText(t).then(()=>{$("copyMsg").textContent="Copied. Paste into Excel or Google Sheets.";box.hidden=true},fb)}catch(e){fb()}});
+window.addEventListener("resize",()=>drawGraph());
+if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",update);
+/* ---------- report ---------- */
+const names={fixed:"Resistor",ldr:"LDR",ntc:"Thermistor (NTC)"};
+const tabName={explore:"Explore",street:"Street light",fan:"Rooftop fan",free:"Open lab"};
+function circuitText(){const s=calc();
+  const part=(t,v)=>t==="fixed"?"resistor "+fmtR(RV[+v]):names[t];
+  let t="Vin = "+s.vin.toFixed(1)+" V. Top (R1): "+part($("topType").value,$("topVal").value)+". Bottom (R2): "+part($("botType").value,$("botVal").value)+".";
+  if(mode!=="explore") t+=" Control unit switches at "+s.thr.toFixed(1)+" V"+(s.loadOn?" (input resistance "+fmtR(s.rl)+")":"")+".";
+  return t;}
+$("fillCirc").addEventListener("click",()=>{$("rCirc").value=circuitText()});
+const asc=t=>String(t||"").replace(/Ω/g,"ohm").replace(/₁/g,"1").replace(/₂/g,"2").replace(/≥/g,">=").replace(/≤/g,"<=").replace(/[→⟶]/g,"->").replace(/×/g,"x").replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[^\x00-\xFF]/g,"?");
+function pdfMsg(t){$("pdfMsg").textContent=t}
+$("pdfBtn").addEventListener("click",()=>{
+  if(!window.jspdf){pdfMsg("The PDF tool did not load. Check the internet connection and reload the page.");return}
+  const name=$("rName").value.trim(); if(!name){pdfMsg("Type your name first.");$("rName").focus();return}
+  try{
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:"mm",format:"a4"}); const PW=210,M=15;let y=0;
+  const navy=[22,50,92],teal=[14,138,131],ink=[27,42,63],grey=[90,107,128];
+  const newPage=()=>{doc.addPage();y=M};
+  const need=h=>{if(y+h>282)newPage()};
+  doc.setFillColor(...navy);doc.rect(0,0,PW,24,"F");
+  doc.setTextColor(255,255,255);doc.setFont("helvetica","bold");doc.setFontSize(17);doc.text("Sensor Circuit Lab report",M,12);
+  doc.setFont("helvetica","normal");doc.setFontSize(10);doc.text("Potential dividers and sensors  |  PhysicsFlow",M,19);
+  y=33;doc.setTextColor(...ink);doc.setFontSize(11);
+  const info=[["Name",name],["Class",$("rClass").value],["Date",new Date().toLocaleDateString("en-GB")],["Mission",$("rMission").value],["Scenario tab",tabName[mode]]];
+  info.forEach((r,i)=>{const x=M+(i%3)*62,yy=y+Math.floor(i/3)*7;doc.setFont("helvetica","bold");doc.text(r[0]+":",x,yy);const lw=doc.getTextWidth(r[0]+":")+2;doc.setFont("helvetica","normal");doc.text(asc(r[1]).slice(0,28),x+lw,yy)});
+  y+=17;
+  const head=t=>{need(12);doc.setFont("helvetica","bold");doc.setFontSize(12);doc.setTextColor(...teal);doc.text(t,M,y);y+=6;doc.setTextColor(...ink);doc.setFontSize(10.5);doc.setFont("helvetica","normal")};
+  const para=t=>{const lines=doc.splitTextToSize(asc(t)||"(not answered)",PW-2*M);lines.forEach(l=>{need(5.5);doc.text(l,M,y);y+=5})};
+  head("Circuit settings");para(circuitText());y+=3;
+  head("Data table ("+rows.length+" readings)");
+  const cols=["#","Light/lux","T/°C","R1/ohm","R2/ohm","Vin/V","Vout/V","I/mA","Unit"],cw=[10,24,18,24,24,18,20,22,20];
+  const rowOut=(cells,bold)=>{need(6);let x=M;doc.setFont("helvetica",bold?"bold":"normal");cells.forEach((c,i)=>{doc.text(String(c),x+1,y);x+=cw[i]});y+=5.5};
+  doc.setFillColor(227,234,244);doc.rect(M,y-4,180,6,"F");rowOut(cols,true);
+  if(!rows.length)para("No readings recorded.");
+  rows.forEach((r,i)=>rowOut([i+1,r.sens?fmtLux(r.lux).replace(/,/g,""):"-",r.sens?r.T.toFixed(1):"-",Math.round(r.r1),Math.round(r.r2),r.vin.toFixed(1),r.vout.toFixed(2),r.I.toFixed(3),mode==="explore"?"-":(r.on?"ON":"OFF")]));
+  y+=3;head("Graph");
+  const off=document.createElement("canvas");
+  drawGraph(off,{"--muted":"#5a6b80","--line":"#cfd8e2","--ink":"#13233d","--amber":"#e8a020","--teal":"#0e8a83","--panel":"#ffffff"},900,450);
+  need(92);doc.addImage(off.toDataURL("image/png"),"PNG",M,y,180,90);y+=95;
+  head("Design Card");
+  [["My question",$("rQ").value],["Circuit and component values",$("rCirc").value],["Key evidence",$("rEvid").value],["Why it works",$("rWhy").value],["One limitation",$("rLim").value]].forEach(([k,v])=>{need(12);doc.setFont("helvetica","bold");doc.text(k,M,y);y+=5;doc.setFont("helvetica","normal");para(v);y+=2});
+  const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8.5);doc.setTextColor(...grey);doc.text("Sensor Circuit Lab  |  PhysicsFlow  |  page "+i+" of "+n,PW/2,292,{align:"center"})}
+  doc.save("Sensor_Circuit_Lab_"+name.replace(/[^A-Za-z0-9]+/g,"_")+".pdf");
+  pdfMsg("Report downloaded.");
+  }catch(e){pdfMsg("Could not make the PDF: "+e.message)}
+});
+setMode("explore");
+})();
+</script>
